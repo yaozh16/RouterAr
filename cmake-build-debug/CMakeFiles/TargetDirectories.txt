@@ -1,0 +1,3 @@
+/media/yaozh16/00017DA30004166D/Academic/Grade3.1/计算机网络原理/routeAr_555202986/routeAr/cmake-build-debug/CMakeFiles/edit_cache.dir
+/media/yaozh16/00017DA30004166D/Academic/Grade3.1/计算机网络原理/routeAr_555202986/routeAr/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/media/yaozh16/00017DA30004166D/Academic/Grade3.1/计算机网络原理/routeAr_555202986/routeAr/cmake-build-debug/CMakeFiles/Test.dir
