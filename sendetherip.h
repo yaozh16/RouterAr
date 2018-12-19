@@ -29,9 +29,14 @@
 #define ETHER_ICMP_PACKET_LEN ETHER_HEADER_LEN + ETHER_ICMP_LEN + IP_HEADER_LEN
 /* IP地址长度 */
 #define IP_ADDR_LEN 4
- 
-struct ip *fill_ip_packet(struct ip *ip_packet,unsigned short checksum);
-void ip_transmit(struct ip *ip_packet,unsigned short checksum,char *name,unsigned char *nextmac,char *bufdata,int datalength);
+
+
+void ip_transmit(char *skbuf,
+                 unsigned int recvlen,
+                 unsigned char *ifname,
+                 unsigned char *nexthopmac,
+                 unsigned int mac_fd,
+                 unsigned int send_fd);
 
 #endif
 

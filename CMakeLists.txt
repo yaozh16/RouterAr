@@ -6,7 +6,16 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
 
+find_package(Threads REQUIRED)
+if(THREADS_HAVE_PTHREAD_ARG)
+    set_property(TARGET my_app PROPERTY COMPILE_OPTIONS "-pthread")
+    set_property(TARGET my_app PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
+endif()
 
 
 
-add_executable(Test main.c analyseip.h arpfind.h checksum.h recvroute.h sendetherip.h lookuproute.h lookuproute.c)
+
+add_executable(Test main.c analyseip.h arpfind.h checksum.h recvroute.h sendetherip.h lookuproute.h lookuproute.c recvroute.c analyseip.c checksum.c arpfind.c sendetherip.c)
+if(CMAKE_THREAD_LIBS_INIT)
+    target_link_libraries(Test "${CMAKE_THREAD_LIBS_INIT}")
+endif()
