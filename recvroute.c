@@ -4,7 +4,7 @@
 #include "recvroute.h"
 #define MAXLINE 200
 void logColor(const char* msg){
-    printf("\033[1;34m%s\033[0m\n",msg);
+    printf("\033[1;35m%s\033[0m\n",msg);
 }
 int listenfd;
 int static_route_get(struct selfroute* route){

@@ -25,7 +25,7 @@ struct nexthop
 
 struct nextaddr
 {
-   char *ifname;
+   char* ifname;
    struct in_addr ipv4addr;
    unsigned int prefixl;
 };

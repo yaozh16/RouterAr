@@ -1,7 +1,7 @@
 //
 // Created by yaozh16 on 18-11-14.
 //
-
+#include <unistd.h>
 #include "stdlib.h"
 #include "arpfind.h"
 int arpGet(char *ifname, unsigned int IP,struct arpmac *srcmac,int arp_fd){
@@ -15,17 +15,30 @@ int arpGet(char *ifname, unsigned int IP,struct arpmac *srcmac,int arp_fd){
     }
     ((struct sockaddr_in*)&arpreq.arp_pa)->sin_addr.s_addr = IP;
     strcpy(arpreq.arp_dev, ifname);
-    int err = ioctl(arp_fd, SIOCGARP, &arpreq);
-    if(err<0){
-        printf("arp error:%d\n",IP);
-        return err;
-    } else{
-        srcmac->mac=(unsigned char*)malloc(sizeof(unsigned char)*14);
-        memcpy(srcmac->mac,arpreq.arp_ha.sa_data,14);
-        unsigned char* hw = (unsigned char*)&arpreq.arp_ha.sa_data; /*硬件地址*/
-        //printf("[next hop mac]:");
-        //printf("%02x:%02x:%02x:%02x:%02x:%02x\n",hw[0],hw[1],hw[2],hw[3],hw[4],hw[5]);
+    int errC=3;
+    while(errC>0){
+        int err = ioctl(arp_fd, SIOCGARP, &arpreq);
+        if(err<0){
+            perror("arp error");
 
-        return 0;
+            system("arp -a");
+            if(err==3) {
+                char pingCmd[30];
+                struct in_addr tem;
+                tem.s_addr = IP;
+                sprintf(pingCmd, "ping %s -c 2 -W 1", inet_ntoa(tem));
+                printf("\033[1;34m%s\033[0m\n", pingCmd);
+                system(pingCmd);
+                sleep(1);
+                system("arp -a");
+            }
+            errC-=1;
+        } else{
+            memcpy(srcmac->mac,arpreq.arp_ha.sa_data,14);
+            return 0;
+        }
+
     }
+    return -1;
+
 }

@@ -1,0 +1,1 @@
+/usr/bin/cc  -g   CMakeFiles/TestRoute.dir/testRoute.c.o CMakeFiles/TestRoute.dir/routeTableSTree.c.o  -o TestRoute 

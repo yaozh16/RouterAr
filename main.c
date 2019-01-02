@@ -54,11 +54,11 @@ void *thr_fn(void *arg)
 					//插入到路由表里
 					//对比insert_route(route_table,inet_addr("192.168.5.0"),24,"enp0s9",if_nametoindex("enp0s9"),inet_addr("192.168.3.1"));
                     printf("[insert]:\n");
-                    printf("[inet_addr]:%s\n",inet_ntoa(selfrt->prefix));
-                    printf("[prefix]:%s\n",inet_ntoa(selfrt->prefix));
-                    printf("[ifname]:%s\n",ifname);
-                    printf("[ifindex]:%d\n",selfrt->ifindex);
-                    printf("[nexthop]:%s\n",inet_ntoa(selfrt->nexthop));
+                    printf("\tinet_addr:%s\n",inet_ntoa(selfrt->prefix));
+                    printf("\tprefix:%s\n",inet_ntoa(selfrt->prefix));
+                    printf("\tifname:%s\n",ifname);
+                    printf("\tifindex:%d\n",selfrt->ifindex);
+                    printf("\tnexthop:%s\n",inet_ntoa(selfrt->nexthop));
 					insert_route(route_table,
 								 selfrt->prefix.s_addr,
 								 selfrt->prefixlen,
@@ -121,18 +121,28 @@ int main()
 
 	{
 		//调用添加函数insert_route往路由表里添加直连路由
-        //insert_route(route_table,inet_addr("192.168.5.0"),24,"enp0s9",if_nametoindex("enp0s9"),inet_addr("192.168.3.1"));
+        //insert_route(route_table,inet_addr("192.168.1.1"),24,"enp0s12u1",if_nametoindex("enp0s12u1"),inet_addr("192.168.4.3"));
 	}
 
 	//创建线程去接收路由信息
 	int pd;
 	pd = pthread_create(&tid,NULL,thr_fn,NULL);
 
+    struct nextaddr *nexthopinfo;
+    nexthopinfo = (struct nextaddr *)malloc(sizeof(struct nextaddr));
+    nexthopinfo->ifname=(char*)malloc(sizeof(char)*(32));
+
+    struct arpmac *srcmac;
+    srcmac = (struct arpmac*)malloc(sizeof(struct arpmac));
+    srcmac->mac=(unsigned char*)malloc(sizeof(unsigned char)*14);
+
+    int count=0;
+	struct sockaddr_in srcSock;
 	while(1)
 	{
 
 		//接收ip数据包模块
-		recvlen=recv(recv_fd,skbuf,sizeof(skbuf),0);//读入skbuf中
+		recvfrom(recv_fd,skbuf, sizeof(skbuf),0,&srcSock, sizeof(struct sockaddr_in));
 		if(recvlen>0)
 		{
 
@@ -141,11 +151,16 @@ int main()
 
 			//分析打印ip数据包的源和目的ip地址
             //发送与接收
-			if(ip_recvpkt->ip_src.s_addr == inet_addr("192.168.1.1"))
+            if(     (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.251")  )
+                    &   (ip_recvpkt->ip_dst.s_addr != inet_addr("127.0.0.1")    )
+                    &   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.9")    )
+                    &   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.8")    )
+                    )
 			{
 
 
-                //analyseIP(ip_recvpkt);
+				analyseIP(ip_recvpkt,srcSock);
+                printf("\t:pronum:%d\n",count++);
 				int s;
 				memset(data,0,1480);
 				for(s=0;s<1480;s++)
@@ -184,9 +199,6 @@ int main()
 
 				//查找路由表，获取下一跳ip地址和出接口模块
 
-				struct nextaddr *nexthopinfo;
-				nexthopinfo = (struct nextaddr *)malloc(sizeof(struct nextaddr));
-				memset(nexthopinfo,0,sizeof(struct nextaddr));
 
 				{
 
@@ -195,8 +207,6 @@ int main()
                     ret=find_route(route_table,ip_recvpkt->ip_dst,nexthopinfo);
                     if(ret==-1) {
                         printf("nexthopinfo not found !!\n");
-						analyseIP(ip_recvpkt);
-						free(nexthopinfo);
                         continue;
                     }
                     if(ret==0){
@@ -206,16 +216,19 @@ int main()
 
 
 				//arp find
-				struct arpmac *srcmac;
-				srcmac = (struct arpmac*)malloc(sizeof(struct arpmac));
-				memset(srcmac,0,sizeof(struct arpmac));
+				int err=0;
 				{
 					//调用arpGet获取下一跳的mac地址
-					arpGet(nexthopinfo->ifname,nexthopinfo->ipv4addr.s_addr,srcmac,mac_fd);
+					if(nexthopinfo->ipv4addr.s_addr==0){
+                        err=arpGet(nexthopinfo->ifname,ip_recvpkt->ip_dst.s_addr,srcmac,mac_fd);
+					} else
+					    err=arpGet(nexthopinfo->ifname,nexthopinfo->ipv4addr.s_addr,srcmac,mac_fd);
+
 				}
 
 				//send ether icmp
-				{
+
+                if(err==0){
 
 					//调用ip_transmit函数   填充数据包，通过原始套接字从查表得到的出接口(比如网卡2)
 					// 将数据包发送出去
@@ -231,11 +244,7 @@ int main()
 					ip_transmit(skbuf,recvlen,nexthopinfo->ifname,srcmac->mac,mac_fd,send_fd);
 				}
 				//clear
-				{
-					free(nexthopinfo);
-					free(srcmac->mac);
-					free(srcmac);
-				}
+                printf("\033[1;35m send done!\033[0m\n");
 			}
 
 

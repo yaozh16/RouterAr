@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/yaozh16/VirtualBox VMs/shareCN/routeAr/analyseip.cpp
+stdio.h
+-
+netinet/ip.h
+-
+

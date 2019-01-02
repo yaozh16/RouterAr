@@ -42,10 +42,10 @@ int insert_route(struct route *rt_table,
 int find_route(struct route *rt_table,struct in_addr dstaddr,struct nextaddr *nexthopinfo){
 
     pthread_mutex_lock(&mutex);
+    //dst addr :32 bit
     while (rt_table->next){
-        unsigned  int mask=0xffffffff<<(32-rt_table->next->prefixlen);
+        unsigned  int mask=htonl(0xffffffff<<(32-rt_table->next->prefixlen));
         if((rt_table->next->iprefix.s_addr&mask)==(dstaddr.s_addr&mask)){
-            nexthopinfo->ifname=malloc(sizeof(char)*(strlen(rt_table->next->nexthop->ifname)+1));
             strcpy(nexthopinfo->ifname,rt_table->next->nexthop->ifname);
             nexthopinfo->ipv4addr.s_addr=rt_table->nexthop->nexthopaddr.s_addr;
             pthread_mutex_unlock(&mutex);
@@ -63,7 +63,7 @@ int find_route(struct route *rt_table,struct in_addr dstaddr,struct nextaddr *ne
 int delete_route(struct route *rt_table,struct in_addr dstaddr,unsigned int prefixlen){
 
     pthread_mutex_lock(&mutex);
-    unsigned  int mask=0xffffffff<<(32-prefixlen);
+    unsigned  int mask=htonl(0xffffffff<<(32-prefixlen));
     while (rt_table->next){
         if(rt_table->next->prefixlen<prefixlen){
             rt_table=rt_table->next;

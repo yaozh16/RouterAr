@@ -14,7 +14,7 @@
 #include<linux/if_ether.h>
 #include <arpa/inet.h>
 
-void analyseIP(struct ip *ip);
+void analyseIP(struct ip *ip, struct sockaddr_in srcsock);
 void err_exit(const char *err_msg);
 
 #endif
