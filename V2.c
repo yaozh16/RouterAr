@@ -201,6 +201,7 @@ int main()
                     ret=find_route_s(root,ip_recvpkt->ip_dst.s_addr,nexthopinfo);
                     if(ret==-1) {
                         printf("nexthopinfo not found !!\n");
+                        //analyseIP(ip_recvpkt,srcSock);
                         continue;
                     }
                     if(ret==0){
