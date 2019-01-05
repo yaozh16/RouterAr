@@ -1,1 +1,0 @@
-/usr/bin/cc  -g   CMakeFiles/V2.dir/V2.c.o CMakeFiles/V2.dir/analyseip.c.o CMakeFiles/V2.dir/lookuproute.c.o CMakeFiles/V2.dir/recvroute.c.o CMakeFiles/V2.dir/checksum.c.o CMakeFiles/V2.dir/arpfind.c.o CMakeFiles/V2.dir/sendetherip.c.o CMakeFiles/V2.dir/routeTableSTree.c.o  -o V2 -lpthread 

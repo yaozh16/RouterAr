@@ -3,7 +3,7 @@
 //
 #include "routeTableSTree.h"
 
-
+#include <pthread.h>
 
 struct routeTableNode* createNode(uint32_t  ip4prefix,
                                   unsigned int prefixlen,
@@ -294,7 +294,7 @@ int delete_route_t(struct routeTableNode *root,in_addr_t dstaddr,unsigned int pr
                         hitNode=stack[i];
                     }
                 } else {
-                    printf("route not found!\n");
+                    //printf("route not found!\n");
                 }
             }
         }
@@ -309,21 +309,25 @@ int insert_route_s(struct routeTableNode *root,
                    char *ifname,
                    unsigned int ifindex,
                    uint32_t  nexthopaddr){
-    pthread_mutex_lock(&mutex);
+    pthread_rwlock_wrlock(&rwlock);
     int ret=insert_route_t(root,ip4prefix,prefixlen,ifname,ifindex,nexthopaddr);
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock);
     return ret;
 }
 
-int find_route_s(struct routeTableNode *rt_table,in_addr_t dstaddr,struct nextaddr *nexthopinfo){
-    pthread_mutex_lock(&mutex);
+int find_route_s(struct routeTableNode *rt_table,
+                in_addr_t dstaddr,
+                struct nextaddr *nexthopinfo){
+    pthread_rwlock_rdlock(&rwlock);
     int ret=find_route_t(rt_table,dstaddr,nexthopinfo);
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock);
     return ret;
 }
-int delete_route_s(struct routeTableNode *rt_table,in_addr_t dstaddr,unsigned int prefixlen){
-    pthread_mutex_lock(&mutex);
+int delete_route_s(struct routeTableNode *rt_table,
+                    in_addr_t dstaddr,
+                    unsigned int prefixlen){
+    pthread_rwlock_wrlock(&rwlock);
     int ret=delete_route_t(rt_table,dstaddr,prefixlen);
-    pthread_mutex_unlock(&mutex);
+    pthread_rwlock_unlock(&rwlock);
     return ret;
 }

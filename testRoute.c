@@ -3,6 +3,7 @@
 //
 #include <stdio.h>
 #include "routeTableSTree.h"
+#include <unistd.h>
 int printTable(struct routeTableNode* root){
     int curCount=0;
     int nextCount=0;
@@ -10,6 +11,9 @@ int printTable(struct routeTableNode* root){
     struct routeTableNode* nexts[100];
     curCount=1;
     curs[0]=root;
+    if(pthread_rwlock_init(&rwlock, NULL) != 0){
+        exit(-1);
+    }
 
     printf("Tree:\n");
     while(curCount>0) {

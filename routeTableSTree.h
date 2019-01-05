@@ -4,6 +4,8 @@
 
 #include <arpa/inet.h>
 #include "lookuproute.h"
+#include <net/if.h>
+#include <pthread.h>
 //segmentTree
 struct routeTableNode{
     short valid;
@@ -15,7 +17,7 @@ struct routeTableNode{
     //nexthop
     unsigned int ifindex;//获取出接口
     struct in_addr nexthopaddr;
-    char ifname[32];
+    char ifname[IFNAMSIZ];
 
     //generated
     uint32_t mask;

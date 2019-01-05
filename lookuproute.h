@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
-
+static pthread_rwlock_t rwlock;
 static pthread_mutex_t mutex;
  
 struct nexthop

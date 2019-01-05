@@ -51,11 +51,11 @@ void *thr_fn(void *arg)
                     printf("\t[ifindex]%d\n",selfrt->ifindex);
                     printf("\t[nexthop]%s\n",inet_ntoa(selfrt->nexthop));
                     insert_route_s(root,
-                                 selfrt->prefix.s_addr,
-                                 selfrt->prefixlen,
-                                 ifname,
-                                 selfrt->ifindex,
-                                 selfrt->nexthop.s_addr);
+                                   selfrt->prefix.s_addr,
+                                   selfrt->prefixlen,
+                                   ifname,
+                                   selfrt->ifindex,
+                                   selfrt->nexthop.s_addr);
                 }
             }
             else if(selfrt->cmdnum == 25)
@@ -68,8 +68,8 @@ void *thr_fn(void *arg)
                 printf("\t[ifindex]%d\n",selfrt->ifindex);
                 printf("\t[nexthop]%s\n",inet_ntoa(selfrt->nexthop));
                 delete_route_s(root,
-                             selfrt->prefix.s_addr,
-                             selfrt->prefixlen);
+                               selfrt->prefix.s_addr,
+                               selfrt->prefixlen);
             }
         }
     }
@@ -103,6 +103,9 @@ int main()
     if(pthread_mutex_init(&mutex, NULL) != 0){
         err_exit("mutex err\n");
     }
+    if(pthread_rwlock_init(&rwlock, NULL) != 0){
+        err_exit("mutex err\n");
+    }
 
     //路由表初始化
     root=(struct routeTableNode*)malloc(sizeof(struct routeTableNode));
@@ -127,16 +130,13 @@ int main()
 
     struct nextaddr *nexthopinfo;
     nexthopinfo = (struct nextaddr *)malloc(sizeof(struct nextaddr));
-    nexthopinfo->ifname=(char*)malloc(sizeof(char)*(32));
+    nexthopinfo->ifname=(char*)malloc(sizeof(char)*(IFNAMSIZ));
 
     struct arpmac *srcmac;
     srcmac = (struct arpmac*)malloc(sizeof(struct arpmac));
     srcmac->mac=(unsigned char*)malloc(sizeof(unsigned char)*14);
 
 
-    uint32_t count=0;
-    uint32_t sockLen=sizeof(struct sockaddr_in);
-    struct sockaddr_in srcSock;
     while(1)
     {
         //接收ip数据包模块
@@ -150,63 +150,42 @@ int main()
 
             //分析打印ip数据包的源和目的ip地址
             //发送与接收
-            if(     (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.251")  )
-                &   (ip_recvpkt->ip_dst.s_addr != inet_addr("127.0.0.1")    )
-                &   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.9")    )
-                &   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.8")    )
-                &   (ip_recvpkt->ip_dst.s_addr != ip_recvpkt->ip_src.s_addr    )
-                )
+            if(1
+                    //     (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.251")  )
+                    //&&   (ip_recvpkt->ip_dst.s_addr != inet_addr("127.0.0.1")    )
+                    //&&   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.9")    )
+                    //&&   (ip_recvpkt->ip_dst.s_addr != inet_addr("224.0.0.8")    )
+                    //&&   (ip_recvpkt->ip_dst.s_addr != ip_recvpkt->ip_src.s_addr    )
+                    )
             {
-
-
-                //analyseIP(ip_recvpkt,srcSock);
-                //printf("\tpronum:%d\n",count++);
 
                 // 校验计算模块
                 struct _iphdr *iphead;
-                int c=0;
 
                 iphead=(struct _iphdr *)ip_recvpkt;
-                {
-                    //调用校验函数check_sum，成功返回1
-                    c=check_sum((unsigned short*)iphead,iphead->h_verlen&15,iphead->checksum);
-                }
-                if(c ==1)
-                {
-                    //printf("checksum is ok!!\n");
-                }else
-                {
-                    printf("checksum is error !!\n");
-                    return -1;
+                //调用校验函数check_sum，成功返回1
+                if(0==check_sum((unsigned short*)iphead,iphead->h_verlen&15,iphead->checksum)){
+                    //printf("checksum is error !!\n");
+                    continue;
                 }
 
-                {
-                    //调用计算校验和函数count_check_sum
-                    if(0==count_check_sum((unsigned short*)iphead)) {
-                        //TTL==0
-                        printf("TTL error:0\n");
-                        continue;
-
-                    }
+                //调用计算校验和函数count_check_sum
+                if(0==count_check_sum((unsigned short*)iphead)) {
+                    //TTL==0
+                    //printf("TTL error:0\n");
+                    continue;
                 }
 
 
                 //查找路由表，获取下一跳ip地址和出接口模块
 
 
-                {
 
-                    //调用查找路由函数lookup_route，获取下一跳ip地址和出接口
-                    int ret=0;
-                    ret=find_route_s(root,ip_recvpkt->ip_dst.s_addr,nexthopinfo);
-                    if(ret==-1) {
-                        printf("nexthopinfo not found !!\n");
-                        //analyseIP(ip_recvpkt,srcSock);
-                        continue;
-                    }
-                    if(ret==0){
-                        //printf("[nexthop interface]:%s\n",nexthopinfo->ifname);
-                    }
+                //调用查找路由函数lookup_route，获取下一跳ip地址和出接口
+                if(-1==find_route_s(root,ip_recvpkt->ip_dst.s_addr,nexthopinfo)) {
+                    //printf("nexthopinfo not found !!\n");
+                    //analyseIP(ip_recvpkt,srcSock);
+                    continue;
                 }
 
 
@@ -217,7 +196,7 @@ int main()
                     if(nexthopinfo->ipv4addr.s_addr==0){
                         err=arpGet(nexthopinfo->ifname,ip_recvpkt->ip_dst.s_addr,srcmac,mac_fd);
                     } else {
-                        err = arpGet(nexthopinfo->ifname, nexthopinfo->ipv4addr.s_addr, srcmac, mac_fd);
+                        err=arpGet(nexthopinfo->ifname, nexthopinfo->ipv4addr.s_addr, srcmac, mac_fd);
                     }
 
                 }
@@ -240,7 +219,7 @@ int main()
                     ip_transmit(skbuf,recvlen,nexthopinfo->ifname,srcmac->mac,mac_fd,send_fd);
                 }
                 //clear
-                printf("\033[1;35m send done!\033[0m\n");
+                //printf("\033[1;35m send done!\033[0m\n");
             }
 
 
